@@ -1,0 +1,43 @@
+---
+title: "CS129 Data Cleaning"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library("nflfastR")
+# Seasons to load 
+seasons <- 2011:2020
+pbp <- nflfastR::load_pbp(seasons)
+```
+
+```{r}
+# Removing plays irrelevant to our project 
+pbpFilter = pbp %>%
+  filter(season_type == "REG") %>% # Only regular season plays 
+  filter(play_type == "pass" | play_type == "run") %>% # Pass/run plays; e.g. no kneels/spikes/special teams 
+  filter(two_point_attempt == FALSE) %>% # No 2PCs 
+  filter(str_detect(desc, "Punt", negate = TRUE)) %>% # Remove fake punts
+  filter(str_detect(desc, "Field Goal", negate = TRUE)) # Remove fake FGs 
+```
+
+
+```{r}
+# Trim columns 
+pbpColumns = pbpFilter %>%
+  select(game_id, posteam_type, yardline_100, half_seconds_remaining, game_seconds_remaining, down, ydstogo, desc, play_type, yards_gained, qb_scramble, qb_dropback, pass_length, pass_location, air_yards, run_location, run_gap, posteam_timeouts_remaining, defteam_timeouts_remaining, posteam_score, defteam_score, score_differential, wp, vegas_wp, spread_line, total_line, roof, surface, temp, wind, xpass) 
+```
+
+```{r}
+# Reorder most relevant information to front 
+pbpArrange = relocate(pbpColumns, game_id, desc, down, ydstogo, yardline_100, score_differential, game_seconds_remaining, play_type, pass_length, pass_location, air_yards, run_location, run_gap)
+```
+
+```{r}
+write.csv(pbpArrange,"~/Desktop/NFL-PBPDataCleaned.csv", row.names = TRUE)
+```
+
